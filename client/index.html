@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Byhako Chat</title>
+  <link rel="shortcut icon" href="//campusonline.unir.net/pluginfile.php/2/theme_proeducaboost/favicon/1697614638/favicon.ico">
+  <style>
+    *,
+    *::after,
+    *::before {
+      box-sizing: border-box;
+    }
+
+    :root {
+      color-scheme: dark light;
+    }
+
+    body {
+      margin: 0;
+      font-family: Verdana, Geneva, Tahoma, sans-serif;
+      display: grid;
+      place-content: center;
+      height: 90dvh;
+      padding: 0px 36px 30px 36px;
+      grid-template-rows: 1fr;
+    }
+    h1 {
+      margin: 50px 0 10px;
+      text-align: center;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #chat {
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      overflow: hidden;
+      width: 340px;
+      height: calc(90vh - 115px);
+      position: relative;
+    }
+    #form {
+      bottom: 0;
+      display: flex;
+      height: 48px;
+      left: 0;
+      padding: 4px;
+      position: absolute;
+      right: 0;
+    }
+
+    #message {
+      border-radius: 9999px;
+      border: 1px solid #eee;
+      flex: 1;
+      margin: 4px;
+      padding: 0 8px;
+    }
+    #message:focus {
+      outline: none;
+    }
+    #form button {
+      background: #09f;
+      color: #fff;
+      border: 0;
+      border-radius: 4px;
+      margin: 4px;
+      cursor: pointer;
+    }
+
+    #messages {
+      list-style: none;
+      max-height: calc(100% - 50px);
+      overflow-y: scroll;
+      position: absolute;
+      bottom: 50px;
+      left: 0;
+      right: 0;
+      margin: 0;
+      padding: 0;
+    }
+    #messages::-webkit-scrollbar {
+      display: none;
+    }
+    #messages li {
+      padding: 0.5rem 1rem;
+      margin: 10px 10px;
+      border-radius: 12px;
+      position: relative;
+    }
+    #messages small {
+      position: absolute;
+      right: 5px;
+      bottom: 3px;
+      font-size: 10px;
+    }
+    #messages li:nth-child(odd) {
+      background-color: #eee;
+      color: #222;
+    }
+    #messages li:nth-child(even) {
+      background-color: #222;
+      color: #eee;
+    }
+  </style>
+</head>
+<body>
+  <h1>Byhako chat</h1>
+
+  <section id="chat">
+    <ul id="messages">
+
+    </ul>
+    <form id="form">
+      <input type="text" name="message" id="message" placeholder="Type a message" autocomplete="off" />
+      <button type="submit">Enviar</button>
+    </form>
+  </section>
+
+
+  <script type="module">
+    import { io } from 'https://cdn.socket.io/4.3.2/socket.io.esm.min.js'
+
+    const getUserName = async () => {
+      const userName = localStorage.getItem('username')
+      if (userName) {
+        return userName
+      }
+
+      const res = await fetch('https://random-data-api.com/api/users/random_user')
+      const { username: randomUserName } = await res.json()
+
+      localStorage.setItem('username', randomUserName)
+      return randomUserName
+    }
+
+    const socket = io({
+      auth: {
+        serverOffset: 0,
+        username: await getUserName()
+      }
+    })
+
+    const form = document.getElementById('form')
+    const input = document.getElementById('message')
+    const messages = document.getElementById('messages')
+
+    socket.on('chat message', (msg, serverOffset, userName) => {
+      const item = `
+        <li>
+          ${msg}
+          <small>${userName}</small>
+        </li>
+      `
+      messages.insertAdjacentHTML('beforeend', item)
+      socket.auth.serverOffset = serverOffset
+      messages.scrollTop = messages.scrollHeight
+    })
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault()
+      if (input.value) {
+        socket.emit('chat message', input.value)
+        input.value = ''
+      }
+    })
+
+
+  </script>
+</body>
+</html>
